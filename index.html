@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>簡單 JS 輪播</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding:20px}
+  .carousel{width:100%;max-width:720px;margin:0 auto;position:relative;overflow:hidden;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+  .track{display:flex;transition:transform .45s ease}
+  .slide{min-width:100%;padding:20px 0;text-align:center;background:#f7f7f7}
+  .slide img{max-width:90%;height:auto;border-radius:6px}
+  .controls{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 8px;pointer-events:none}
+  .btn{pointer-events:auto;background:rgba(0,0,0,.5);color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+  .dots{text-align:center;margin-top:10px}
+  .dot{display:inline-block;width:10px;height:10px;margin:0 5px;border-radius:50%;background:#ccc;cursor:pointer}
+  .dot.active{background:#333}
+</style>
+</head>
+<body>
+  <h2>簡單輪播示例</h2>
+
+  <div class="carousel" id="carousel" tabindex="0" aria-roledescription="carousel" aria-label="圖片輪播">
+    <div class="track" id="track">
+      <div class="slide"><img src="https://via.placeholder.com/640x280?text=Slide+1" alt="示例圖片 1"></div>
+      <div class="slide"><img src="https://via.placeholder.com/640x280?text=Slide+2" alt="示例圖片 2"></div>
+      <div class="slide"><img src="https://via.placeholder.com/640x280?text=Slide+3" alt="示例圖片 3"></div>
+    </div>
+
+    <div class="controls" aria-hidden="true">
+      <button class="btn" id="prev" aria-label="上一張">◀</button>
+      <button class="btn" id="next" aria-label="下一張">▶</button>
+    </div>
+  </div>
+
+  <div class="dots" id="dots" aria-hidden="false"></div>
+
+<script>
+(function(){
+  const track = document.getElementById('track');
+  const slides = Array.from(track.children);
+  const dotsWrap = document.getElementById('dots');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  const carousel = document.getElementById('carousel');
+
+  let index = 0;
+  let timer = null;
+  const interval = 3500;
+
+  // 建立指示器
+  slides.forEach((_, i) => {
+    const d = document.createElement('button');
+    d.className = 'dot' + (i===0? ' active':'');
+    d.dataset.index = i;
+    d.setAttribute('aria-label', `前往第 ${i+1} 張`);
+    dotsWrap.appendChild(d);
+  });
+
+  const dots = Array.from(dotsWrap.children);
+
+  function goTo(i){
+    index = (i + slides.length) % slides.length;
+    track.style.transform = `translateX(-${index * 100}%)`;
+    dots.forEach((d,idx)=> d.classList.toggle('active', idx === index));
+  }
+
+  function next(){ goTo(index+1); }
+  function prev(){ goTo(index-1); }
+
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+  dots.forEach(d => d.addEventListener('click', e => goTo(Number(e.currentTarget.dataset.index))));
+
+  // 鍵盤控制（左右鍵）
+  carousel.addEventListener('keydown', e => {
+    if(e.key === 'ArrowLeft') prev();
+    if(e.key === 'ArrowRight') next();
+  });
+
+  // 自動播放（hover 或 focus 暫停）
+  function startAuto(){ timer = setInterval(next, interval); }
+  function stopAuto(){ if(timer) { clearInterval(timer); timer = null; } }
+
+  carousel.addEventListener('mouseenter', stopAuto);
+  carousel.addEventListener('mouseleave', startAuto);
+  carousel.addEventListener('focusin', stopAuto);
+  carousel.addEventListener('focusout', startAuto);
+
+  // 尊重 reduced-motion
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduced) startAuto();
+
+  // 初始位置
+  goTo(0);
+})();
+</script>
+</body>
+</html>
